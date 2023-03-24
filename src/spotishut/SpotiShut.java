@@ -9,6 +9,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import javax.swing.JTextArea;
+
 /**
  *
  * @author Alejandro Carballo
@@ -21,7 +23,7 @@ public class SpotiShut {
             + " Spotify.exe\" /fo list /v";
     
     /**
-     * Command used for getting Spotify.exe process details
+     * Command used for checking dependencies
      */
     private final String CHECK = "SoundVolumeView.exe /GetMute m1n231m2";
     
@@ -39,18 +41,21 @@ public class SpotiShut {
      * String displayed in window name when playing ad
      */
     private final String WNWTEXT = "Spotify Free";
+    
+    private JTextArea textUI;
 
     /**
      * 
      * @throws Exception 
      * @throws java.io.IOException
      */
-    public SpotiShut() throws Exception {
+    public SpotiShut(JTextArea a) throws Exception {
     	if(!checkDependencies()) {
     		throw new Exception("Dependencies not met: SoundVolumeView not present on the system\n"
     				+ "Download SoundVolumeView.exe from nirsoft webpage and place it on System32.");
 		}
-    	System.out.println("Welcome to SpotiShut!");
+    	this.textUI = a;
+    	textUI.append("Welcome to SpotiShut!");
     }
     
     public void start() throws IOException {
@@ -65,20 +70,20 @@ public class SpotiShut {
 			p = Runtime.getRuntime().exec(COMMAND);
 			p.waitFor();
 		} catch (IOException | InterruptedException ex) {
-			System.out.println("Error while obtaining processes: \n" + ex.getMessage());
+			textUI.append("\nError while obtaining processes: \n" + ex.getMessage());
 			return;
 		}
 		read = new BufferedReader(new InputStreamReader(p.getInputStream()));
 		while ((out = read.readLine()) != null) {
-			if (out.contains("de ventana:") && !out.contains("N/D")) {
+			if (!out.contains("N/D")) {
 				while (out != null && out.contains(WNWTEXT)) {
 					if (!adDetect) { // Avoids repeating command while ads play
 						try {
-							System.out.println("Ads detected, muting...");
+							textUI.append("\nNo playback/Ads detected, muting...");
 							mute = Runtime.getRuntime().exec(MUTE);
 							mute.waitFor();
 						} catch (InterruptedException ex) {
-							System.out.println("Exception when muting: \n" + ex.getMessage());
+							textUI.append("\nException when muting: \n" + ex.getMessage());
 						}
 					}
 
@@ -94,14 +99,14 @@ public class SpotiShut {
 							}
 						}
 					} catch (IOException | InterruptedException ex) {
-						System.out.println("Error while muted: \n" + ex.getMessage());
+						textUI.append("\nError while muted: \n" + ex.getMessage());
 						unmute = Runtime.getRuntime().exec(UNMUTE);
 						return;
 					}
 				}
 				if (adDetect) {
 					adDetect = false;
-					System.out.println("Ads ended");
+					textUI.append("\nPlayback detected, unmuting...");
 					unmute = Runtime.getRuntime().exec(UNMUTE);
 				}
 			}
@@ -109,12 +114,34 @@ public class SpotiShut {
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException ex) {
-			System.out.println("Thread sleep error: \n" + ex.getMessage());
+			textUI.append("\nThread sleep error: \n" + ex.getMessage());
 		}
 		read.close();
 		p = mute = unmute = null;
 		read = null;
 		out = null;
+    }
+    
+    public void onExit() {
+    	@SuppressWarnings("unused")
+		Process unmute;
+    	try {
+			unmute = Runtime.getRuntime().exec(UNMUTE);
+		} catch (IOException e) {}
+    }
+    
+    public boolean isClosed() {
+    	Process p;
+    	try {
+			p = Runtime.getRuntime().exec(COMMAND);
+			p.waitFor();
+			BufferedReader read = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			for(int i = 0; i < 4; i++) read.readLine();
+			if(read.readLine() == null) return true;
+		} catch (IOException | InterruptedException e) {
+			return false;
+		}
+    	return false;
     }
     
 	private boolean checkDependencies() throws InterruptedException, IOException {
