@@ -12,7 +12,7 @@ import java.io.InputStreamReader;
 import javax.swing.JTextArea;
 
 /**
- *
+ * 
  * @author Alejandro Carballo
  */
 public class SpotiShut {
@@ -28,12 +28,12 @@ public class SpotiShut {
     private final String CHECK = "SoundVolumeView.exe /GetMute m1n231m2";
     
     /**
-     * Muting command using nircmd
+     * Muting command using nirsoft
      */
     private final String MUTE = "SoundVolumeView.exe /Mute \"Spotify.exe\"";
     
     /**
-     * Unmuting command using nircmd
+     * Unmuting command using nirsoft
      */
     private final String UNMUTE = "SoundVolumeView.exe /Unmute \"Spotify.exe\"";
     
