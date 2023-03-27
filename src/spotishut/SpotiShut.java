@@ -9,7 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import javax.swing.JTextArea;
+import javax.swing.JTextField;
 
 /**
  * 
@@ -17,10 +17,17 @@ import javax.swing.JTextArea;
  */
 public class SpotiShut {
     /**
-     * Command used for getting Spotify.exe process details
+     * Command used for getting Spotify's window title
      */
     private final String COMMAND = "tasklist /fi \"imagename eq"
-            + " Spotify.exe\" /fo list /v";
+            + " Spotify.exe\" /fi \"windowtitle eq Spotify Free\""
+            + " /fo list";
+    
+    /**
+     * Command used for getting Spotify's state
+     */
+    private final String STATE = "tasklist /fi \"imagename eq"
+            + " Spotify.exe\"";
     
     /**
      * Command used for checking dependencies
@@ -37,89 +44,92 @@ public class SpotiShut {
      */
     private final String UNMUTE = "SoundVolumeView.exe /Unmute \"Spotify.exe\"";
     
-    /**
-     * String displayed in window name when playing ad
-     */
-    private final String WNWTEXT = "Spotify Free";
+    private JTextField textUI;
     
-    private JTextArea textUI;
+    @SuppressWarnings("unused")
+	private Process p, state;
+    
+    private BufferedReader pRead;
 
     /**
      * 
      * @throws Exception 
      * @throws java.io.IOException
      */
-    public SpotiShut(JTextArea a) throws Exception {
+    public SpotiShut(JTextField a) throws Exception {
     	if(!checkDependencies()) {
-    		throw new Exception("Dependencies not met: SoundVolumeView not present on the system\n"
-    				+ "Download SoundVolumeView.exe from nirsoft webpage and place it on System32.");
+    		throw new Exception("Dependencies not met");
 		}
     	this.textUI = a;
-    	textUI.append("Welcome to SpotiShut!");
     }
     
-    public void start() throws IOException {
-        Process p;              // Get process info
+    public boolean start() throws IOException {
         @SuppressWarnings("unused")
 		Process mute, unmute;   // Mute or unmute
-        BufferedReader read;    // Reads proccess info
         String out;             // Used for comparing
-        boolean adDetect = false;
         
 		try {
 			p = Runtime.getRuntime().exec(COMMAND);
 			p.waitFor();
-		} catch (IOException | InterruptedException ex) {
-			textUI.append("\nError while obtaining processes: \n" + ex.getMessage());
-			return;
+		} catch (InterruptedException ex) {
+			textUI.setText("Error detected, trying to recover...");
+			p = null;
+			return false;
 		}
-		read = new BufferedReader(new InputStreamReader(p.getInputStream()));
-		while ((out = read.readLine()) != null) {
-			if (!out.contains("N/D")) {
-				while (out != null && out.contains(WNWTEXT)) {
-					if (!adDetect) { // Avoids repeating command while ads play
-						try {
-							textUI.append("\nNo playback/Ads detected, muting...");
-							mute = Runtime.getRuntime().exec(MUTE);
-							mute.waitFor();
-						} catch (InterruptedException ex) {
-							textUI.append("\nException when muting: \n" + ex.getMessage());
-						}
+		
+		pRead = new BufferedReader(new InputStreamReader(p.getInputStream()));
+		
+		if(pRead.readLine() != null && (out = pRead.readLine()).contains("Spotify.exe")) {	//Ad or No Playback
+			try {
+				textUI.setText("No playback/Ads detected, now muted");
+				mute = Runtime.getRuntime().exec(MUTE);
+				mute.waitFor();
+			} catch (InterruptedException ex) {
+				textUI.setText("Error detected, trying to recover...");
+				mute = null;
+				return false;
+			}
+			try {
+				while(out.contains("Spotify.exe")) {
+					p = Runtime.getRuntime().exec(COMMAND);
+					p.waitFor();
+					pRead = new BufferedReader(new InputStreamReader(p.getInputStream()));
+					if((pRead.readLine()) != null && (out = pRead.readLine()).contains("Spotify.exe")) {
+						Thread.sleep(500);
 					}
+				}
+			} catch (IOException | InterruptedException ex) {
+				textUI.setText("Error detected, trying to recover...");
+				unmute = Runtime.getRuntime().exec(UNMUTE);
+				return false;
+			}
+			
+			textUI.setText("Enjoy your music!");
+			unmute = Runtime.getRuntime().exec(UNMUTE);
 
-					adDetect = true;
-					try {
-						p = Runtime.getRuntime().exec(COMMAND);
-						p.waitFor();
-						read = new BufferedReader(new InputStreamReader(p.getInputStream()));
-						while ((out = read.readLine()) != null) {
-							if (out.contains(WNWTEXT)) {
-								Thread.sleep(500);
-								break;
-							}
-						}
-					} catch (IOException | InterruptedException ex) {
-						textUI.append("\nError while muted: \n" + ex.getMessage());
-						unmute = Runtime.getRuntime().exec(UNMUTE);
-						return;
-					}
+			pRead.close();
+			mute = unmute = null;
+			out = null;
+			return false;
+		} else {
+			try {
+				state = Runtime.getRuntime().exec(STATE);
+				pRead = new BufferedReader(new InputStreamReader(state.getInputStream()));
+				for(int i = 0; i < 4; i++) pRead.readLine();
+				if(pRead.readLine() == null) {	//Spotify closed
+					return true;
+				} else {						//Spotify running
+					pRead.close();
+					mute = unmute = null;
+					out = null;
+					Thread.sleep(1000);
+					return false;
 				}
-				if (adDetect) {
-					adDetect = false;
-					textUI.append("\nPlayback detected, unmuting...");
-					unmute = Runtime.getRuntime().exec(UNMUTE);
-				}
+			} catch (IOException | InterruptedException ex) {
+				textUI.setText("Error detected, trying to recover...");
+				return false;
 			}
 		}
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException ex) {
-			textUI.append("\nThread sleep error: \n" + ex.getMessage());
-		}
-		read.close();
-		p = mute = unmute = null;
-		read = null;
-		out = null;
     }
     
     public void onExit() {
@@ -128,20 +138,6 @@ public class SpotiShut {
     	try {
 			unmute = Runtime.getRuntime().exec(UNMUTE);
 		} catch (IOException e) {}
-    }
-    
-    public boolean isClosed() {
-    	Process p;
-    	try {
-			p = Runtime.getRuntime().exec(COMMAND);
-			p.waitFor();
-			BufferedReader read = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			for(int i = 0; i < 4; i++) read.readLine();
-			if(read.readLine() == null) return true;
-		} catch (IOException | InterruptedException e) {
-			return false;
-		}
-    	return false;
     }
     
 	private boolean checkDependencies() throws InterruptedException, IOException {

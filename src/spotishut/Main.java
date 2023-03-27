@@ -7,50 +7,53 @@ package spotishut;
 
 import java.io.IOException;
 
+import javax.swing.BoxLayout;
 import javax.swing.JFrame;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
+import javax.swing.JTextField;
 
 /**
- *
+ * 
  * @author Alejandro Carballo
  */
 public class Main {
+	
     public static void main(String[] args) {
     	JFrame frame = new JFrame("SpotiShut!");
-    	JTextArea textArea = new JTextArea();
-    	JScrollPane scrollPane;
+    	JTextField title = new JTextField("Welcome to SpotiShut!");
+    	JTextField textField = new JTextField("Enjoy your music!");
+    	boolean closed = false;
     	
-    	textArea.setCaretPosition(textArea.getDocument().getLength());
+    	frame.getContentPane().setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
     	frame.setResizable(false);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);      
-        frame.setSize(240, 150);
-        scrollPane = new JScrollPane(textArea);
-        frame.add(scrollPane);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        title.setHorizontalAlignment(JTextField.CENTER);
+        textField.setHorizontalAlignment(JTextField.CENTER);
+        frame.add(title);
+        frame.add(textField);
+        frame.setSize(240, 130);
         frame.setVisible(true);
         try {
-        	SpotiShut sab = new SpotiShut(textArea);
+        	SpotiShut sab = new SpotiShut(textField);
         	while(true) {
-        		if(frame.isVisible()) {
-        			sab.start();
-            		System.gc();
+        		if(frame.isVisible() && !closed) {
+        			closed = sab.start();
         		} else {
         			sab.onExit();
         			return;
         		}
-        		if(sab.isClosed()) {
+        		if(closed) {
         			sab.onExit();
-        			textArea.setText("Spotify closed, exiting...");
+        			textField.setText("Spotify closed, exiting...");
         			Thread.sleep(2000);
         			frame.dispose();
         			return;
         		}
         	}
         } catch (IOException ex) {
-        	textArea.setText("IO Exception when starting: \n" + ex);
+        	textField.setText("IO Err: " + ex);
 			return;
         } catch (Exception err) {
-        	textArea.setText("Error while starting: \n" + err);
+        	textField.setText("Err: " + err);
 			return;
 		}
     }
