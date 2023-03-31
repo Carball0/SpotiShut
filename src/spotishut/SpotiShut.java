@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.zip.ZipInputStream;
 
@@ -21,7 +22,11 @@ import javax.swing.JTextField;
  */
 public class SpotiShut {
 	
-	private final String APPDATADIR = System.getenv("APPDATA") + File.separator;
+	/**
+     * Program data and dependencies
+     */
+	
+	private final String PROGRAMDIR = System.getenv("APPDATA") + File.separator + "SpotiShut" + File.separator;
 
     /**
      * Command used for getting Spotify's window title
@@ -39,12 +44,12 @@ public class SpotiShut {
     /**
      * Muting command using nirsoft
      */
-    private final String MUTE = APPDATADIR + "SoundVolumeView.exe /Mute \"Spotify.exe\"";
+    private final String MUTE = PROGRAMDIR + "SoundVolumeView.exe /Mute \"Spotify.exe\"";
 
     /**
      * Unmuting command using nirsoft
      */
-    private final String UNMUTE = APPDATADIR + "SoundVolumeView.exe /Unmute \"Spotify.exe\"";
+    private final String UNMUTE = PROGRAMDIR + "SoundVolumeView.exe /Unmute \"Spotify.exe\"";
 
     private JTextField textUI;
 
@@ -62,9 +67,9 @@ public class SpotiShut {
     	this.textUI = a;
     	
     	if(extractDependencies()) {
-    		a.setText("Dependencies OK!");
+    		textUI.setText("Dependencies OK!");
     	} else {
-    		a.setText("Dependencies extracted in %appdata%");
+    		textUI.setText("Dependencies extracted in %appdata%");
     	}
     }
 
@@ -146,30 +151,52 @@ public class SpotiShut {
     }
     
     private boolean extractDependencies() throws Exception {
-		File depend = new File(APPDATADIR + File.separator + "SoundVolumeView.exe");
-		if (depend.exists())
+		File depend = new File(PROGRAMDIR);
+		
+		if (depend.exists()) {
 			return true;
+		} else {
+			depend.mkdirs();
+		}
 
-		FileInputStream isFile;
+		InputStream isFile;
 		byte[] buffer = new byte[4096];
 		try {		// Extract dependencies into %appdata%
-			isFile = new FileInputStream("SoundVolumeView.zip");
+			isFile = this.getClass().getResourceAsStream("/SoundVolumeView.zip");
 			ZipInputStream isZip = new ZipInputStream(isFile);
 			isZip.getNextEntry();
-			File exec = new File(APPDATADIR + File.separator + "SoundVolumeView.exe");
+			File exec = new File(PROGRAMDIR + "SoundVolumeView.exe");
 			FileOutputStream osFile = new FileOutputStream(exec);
 			int len;
 			while ((len = isZip.read(buffer)) > 0) {
 				osFile.write(buffer, 0, len);
-				System.out.println("AAA");
 			}
-			osFile.close();
 			isZip.closeEntry();
+			osFile.close();
+			
+			isZip.getNextEntry();
+			exec = new File(PROGRAMDIR + "SpotiShutExec.bat");
+			osFile = new FileOutputStream(exec);
+			while ((len = isZip.read(buffer)) > 0) {
+				osFile.write(buffer, 0, len);
+			}
+			isZip.closeEntry();
+			osFile.close();
+			
+			exec = new File("SpotiShut.jar");
+			InputStream isFileExec = new FileInputStream(exec);
+			osFile = new FileOutputStream(new File(PROGRAMDIR + "SpotiShut.jar"));
+			while ((len = isFileExec.read(buffer)) > 0) {
+				osFile.write(buffer, 0, len);
+			}
+			
+			osFile.close();
+			isFileExec.close();
 			isZip.close();
 			isFile.close();
 			return false;
-		} catch (IOException e) {
-			throw new Exception("Error when extracting dependencies");
+		} catch (Exception e) {
+			throw new Exception("Error de dependencias: "+e);
 		}
 	}
 }

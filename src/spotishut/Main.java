@@ -36,14 +36,13 @@ public class Main {
         frame.setVisible(true);
         try {
         	SpotiShut sab = new SpotiShut(textField);
+        	Thread.sleep(2000);
+        	frame.setState(JFrame.ICONIFIED);
         	while(true) {
-        		if(frame.isVisible() && !closed) {
+        		if(frame.isVisible() && !closed)
         			closed = sab.start();
-        		} else {
-        			sab.onExit();
-        			return;
-        		}
         		if(closed) {
+        			frame.setState(JFrame.NORMAL);
         			sab.onExit();
         			textField.setText("Spotify closed, exiting...");
         			Thread.sleep(2000);

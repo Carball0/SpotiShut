@@ -20,9 +20,8 @@ SoundVolumeView will be automatically installed the first time the app is execut
 ## [Installation](#installation)
 
 ### The quick way - Click and run
-To run the program make sure you have read the dependencies section, 
-[download the jar file](https://github.com/Carball0/SpotiShut/blob/main/SpotiShut.jar?raw=true) and just double click
-the executable while having the Spotify app open. 
+[Download the jar file](https://github.com/Carball0/SpotiShut/blob/main/SpotiShut.jar?raw=true) and just double click
+the executable while having the Spotify app open.
 
 
 Now your Spotify ads will be silenced! You can manually close the app or let it be automatically closed when you stop
@@ -31,17 +30,24 @@ using Spotify.
 ### The complete way - Shortcut
 A shortcut may be configured to make it easier and faster to start listening to music without ads.
 
-Make sure you have followed all the previous steps ([download the jar](https://github.com/Carball0/SpotiShut/blob/main/SpotiShut.jar?raw=true)) 
-and additionally download the [following bat file](https://github.com/Carball0/SpotiShut/blob/main/SpotiShutExec.bat?raw=true). 
+To set it up, modify your already existing desktop shortcut:
 
-To set up the shortcut, modify your already existing desktop shortcut and configure it to execute the bat file,
-which will execute both programs at the same time:
-
-- Move the **bat file** and **jar file** to ````%appdata%```` (write ````%appdata%```` on file explorer and it will take you there)
+- [Download the jar file](https://github.com/Carball0/SpotiShut/blob/main/SpotiShut.jar?raw=true) and execute it at least one time.
 - Right click on **Spotify Shortcut -> Properties -> Target**
-- Change the content on "Target" to "````%appdata%/SpotiShutExec.bat````"
+- Change the content on "Target" to "````%appdata%/SpotiShut/SpotiShutExec.bat````"
 
-Now your Spotify shortcut will open both programs. You may customize the bat file if you choose another location for the executable files.
+## [Components](#components)
+The application creates a new folder inside ````%appdata%```` and extracts the content from ````/src/SoundVolumeView.zip````. The contents under ````%appdata%/SpotiShut/```` 
+are the following:
+
+```
+- **SoundVolumeView.exe**: Software from nirsoft, essential for silencing ads
+- **SpotiShutExec.bat**: Bat file for executing Spotify and SpotiShut at the same time, used for the shortcut.
+- **SpotiShut.jar**: The executable file is copied to this folder. The original can be deleted.
+```
+
+For uninstalling, simply delete the contents in ````%appdata%/SpotiShut/````
+
 
 
 ## [Why SpotiShut and not an ad blocker?](#why-spotishut-and-not-an-ad-blocker)
