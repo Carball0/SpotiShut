@@ -34,7 +34,7 @@ To set it up, modify your already existing desktop shortcut:
 
 - [Download the jar file](https://github.com/Carball0/SpotiShut/blob/main/SpotiShut.jar?raw=true) and execute it at least one time.
 - Right click on **Spotify Shortcut -> Properties -> Target**
-- Change the content on "Target" to "````%appdata%/SpotiShut/SpotiShutExec.bat````"
+- Change the content on "Target" to "````cmd /c %appdata%\SpotiShut\SpotiShutExec.bat````"
 
 ## [Components](#components)
 The application creates a new folder inside ````%appdata%```` and extracts the content from ````/src/SoundVolumeView.zip````. The contents under ````%appdata%/SpotiShut/```` 
